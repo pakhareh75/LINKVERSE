@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkVerse Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1f1c2c, #928DAB);
+            font-family: "Poppins", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px;
+            position: relative;
+        }
+
+        .settings {
+            cursor: pointer;
+            font-size: 22px;
+            transition: transform 0.3s ease;
+        }
+
+        .settings:hover {
+            transform: rotate(90deg);
+        }
+
+        .search input {
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ccc;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .chat-input button {
+            padding: 10px 20px;
+            background: #00c6ff;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            box-shadow: 0 0 10px #00c6ff, 0 0 20px #00c6ff;
+            transform: scale(1.05);
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 15px;
+            width: fit-content;
+            max-width: 70%;
+            word-wrap: break-word;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .message.glow-fire {
+            box-shadow: 0 0 10px #ff4400, 0 0 20px #ff4400, 0 0 30px #ff4400;
+            animation: glowFire 2s infinite;
+            background: linear-gradient(135deg, #ff4400, #ff8800);
+        }
+
+        .message.glow-ice {
+            box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+            animation: glowIce 2s infinite;
+            background: linear-gradient(135deg, #00ffff, #0088ff);
+        }
+
+        .message.glow-neon {
+            box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff;
+            animation: glowNeon 1.5s infinite;
+            background: linear-gradient(135deg, #ff00ff, #8800ff);
+        }
+
+        .message.glow-toxic {
+            box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+            animation: glowToxic 1s infinite;
+            background: linear-gradient(135deg, #00ff00, #008800);
+        }
+
+        .message.glow-gold {
+            box-shadow: 0 0 15px #ffd700, 0 0 30px #ffd700, 0 0 45px #ffd700;
+            animation: glowGold 2s infinite;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+        }
+
+        .message.glow-rainbow {
+            background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff);
+            background-size: 400% 400%;
+            animation: rainbow 3s ease infinite;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .sent {
+            align-self: flex-end;
+            color: white;
+        }
+
+        .received {
+            align-self: flex-start;
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .message-sender {
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-bottom: 3px;
+            opacity: 0.9;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px;
+            color: #00c6ff;
+            font-style: italic;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+            animation: blink 2s infinite;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            width: 350px;
+            max-width: 90%;
+            color: white;
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: #00c6ff;
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .members-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .member-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .member-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .member-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .member-glow {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .online-status {
+            font-size: 0.7em;
+            color: #00ff00;
+        }
+
+        @keyframes glowFire {
+            0%, 100% { box-shadow: 0 0 10px #ff4400, 0 0 20px #ff4400, 0 0 30px #ff4400; }
+            50% { box-shadow: 0 0 15px #ff4400, 0 0 30px #ff4400, 0 0 45px #ff4400; }
+        }
+
+        @keyframes glowIce {
+            0%, 100% { box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; }
+            50% { box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff, 0 0 45px #00ffff; }
+        }
+
+        @keyframes glowNeon {
+            0%, 100% { box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+            50% { box-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff, 0 0 60px #ff00ff; }
+        }
+
+        @keyframes glowToxic {
+            0%, 100% { box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00; }
+            50% { box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00, 0 0 60px #00ff00; }
+        }
+
+        @keyframes glowGold {
+            0%, 100% { box-shadow: 0 0 15px #ffd700, 0 0 30px #ffd700, 0 0 45px #ffd700; }
+            50% { box-shadow: 0 0 25px #ffd700, 0 0 50px #ffd700, 0 0 75px #ffd700; }
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .streak-level {
+            background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff);
+            background-size: 400% 400%;
+            animation: rainbow 3s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .share-link {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .share-link:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1f1c2c, #928DAB);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .welcome-content {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            width: 350px;
+            max-width: 90%;
+        }
+
+        .welcome-content h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .welcome-content input, .welcome-content select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.9);
+            font-size: 16px;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 12px;
+            background: #00c6ff;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .start-btn:hover {
+            box-shadow: 0 0 15px #00c6ff, 0 0 30px #00c6ff;
+            transform: scale(1.05);
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00ff00;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 3000;
+            display: none;
+        }
+
+        .app-link {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-message" id="successMessage"></div>
+
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-content">
+            <h2>🚀 Welcome to LinkVerse</h2>
+            <input type="text" id="userNameInput" placeholder="Enter your cool name" maxlength="20" value="Harsh">
+            
+            <select id="glowEffectSelect">
+                <option value="glow-fire">🔥 Fire Glow</option>
+                <option value="glow-ice">❄️ Ice Glow</option>
+                <option value="glow-neon">💜 Neon Glow</option>
+                <option value="glow-toxic">☢️ Toxic Glow</option>
+                <option value="glow-gold">⭐ Gold Glow</option>
+                <option value="glow-rainbow">🌈 Rainbow Glow</option>
+            </select>
+
+            <div class="app-link">
+                <strong>🌐 App Link:</strong><br>
+                <span id="appLink">Loading...</span>
+            </div>
+
+            <button class="start-btn" onclick="startChat()">Start Chatting 🚀</button>
+            
+            <div style="margin-top: 15px; font-size: 12px; opacity: 0.7;">
+                💡 <strong>Share this link with friends!</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer" style="display: none;">
+        <div class="chat-header">
+            <div class="settings" onclick="showSettings()">⚙️</div>
+            <div class="user-info">
+                <h2 id="chat-user">User <span class="online-dot"></span></h2>
+                <p id="streak">🔥 <span class="streak-level">Level: <span id="streak-level">1</span></span> | <span id="message-count">0</span>/150</p>
+            </div>
+            <div class="search">
+                <input type="text" id="searchUser" placeholder="Search..." oninput="searchMessages(this.value)">
+            </div>
+        </div>
+
+        <div class="chat-box" id="chatBox"></div>
+
+        <div class="typing-indicator" id="typingIndicator">Someone is typing...</div>
+
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type message..." onkeypress="handleKeyPress(event)"/>
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>⚙️ Settings</h3>
+            
+            <div class="share-link" onclick="copyAppLink()">
+                📤 Click to Copy App Link
+            </div>
+
+            <div style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                <strong>Current Profile:</strong><br>
+                Name: <span id="currentUserName">-</span><br>
+                Glow: <span id="currentUserGlow">-</span>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="showProfileSetup()">Edit Profile</button>
+                <button class="modal-btn secondary" onclick="showMembers()">View Members</button>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" onclick="hideSettings()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <h3>👤 Edit Profile</h3>
+            <input type="text" id="editUserNameInput" placeholder="Enter your name" maxlength="20">
+            
+            <h4>Choose Glow Effect:</h4>
+            <select id="editGlowEffectSelect" style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                <option value="glow-fire">🔥 Fire Glow</option>
+                <option value="glow-ice">❄️ Ice Glow</option>
+                <option value="glow-neon">💜 Neon Glow</option>
+                <option value="glow-toxic">☢️ Toxic Glow</option>
+                <option value="glow-gold">⭐ Gold Glow</option>
+                <option value="glow-rainbow">🌈 Rainbow Glow</option>
+            </select>
+
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="updateProfile()">Save Profile</button>
+                <button class="modal-btn secondary" onclick="hideProfileSetup()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="membersModal">
+        <div class="modal-content">
+            <h3>👥 Online Members (<span id="membersCount">0</span>)</h3>
+            <div class="members-list" id="membersList">
+                <div class="member-item">
+                    <div class="member-info">
+                        <span class="member-glow" style="background: #ff4400"></span>
+                        You
+                    </div>
+                    <span class="online-status">● Online</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" onclick="hideMembers()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LinkVerseChat {
+            constructor() {
+                this.totalMessages = 0;
+                this.currentStreakLevel = 1;
+                this.messagesInCurrentLevel = 0;
+                this.messages = [];
+                this.members = new Map();
+                this.currentUser = null;
+                this.typingTimer = null;
+                this.roomId = this.getRoomIdFromURL();
+                this.appLink = window.location.href.split('?')[0];
+                
+                this.updateAppLink();
+            }
+
+            getRoomIdFromURL() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('room') || this.generateRoomId();
+            }
+
+            generateRoomId() {
+                return Math.random().toString(36).substring(2, 15);
+            }
+
+            updateAppLink() {
+                const shareLink = `${this.appLink}?room=${this.roomId}`;
+                document.getElementById('appLink').textContent = shareLink;
+                document.title = `LinkVerse - Room: ${this.roomId}`;
+            }
+
+            init() {
+                this.bindEvents();
+                this.loadData();
+                if (this.currentUser) {
+                    this.updateUI();
+                }
+                this.simulateOnlineUsers();
+            }
+
+            simulateOnlineUsers() {
+                // Simulate some online users
+                const sampleUsers = [
+                    { name: 'Alex', glowEffect: 'glow-ice', online: true },
+                    { name: 'Priya', glowEffect: 'glow-neon', online: true },
+                    { name: 'Rohan', glowEffect: 'glow-gold', online: false }
+                ];
+
+                sampleUsers.forEach(user => {
+                    if (!this.members.has(user.name)) {
+                        this.members.set(user.name, user);
+                    }
+                });
+
+                this.updateMembersList();
+            }
+
+            bindEvents() {
+                const sendBtn = document.getElementById('sendBtn');
+                const messageInput = document.getElementById('messageInput');
+                
+                sendBtn.addEventListener('click', () => this.sendMessage());
+                messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+            }
+
+            sendMessage() {
+                const messageInput = document.getElementById('messageInput');
+                const msg = messageInput.value.trim();
+                
+                if (msg === "") return;
+
+                this.addMessage(msg, 'sent', this.currentUser.name);
+                messageInput.value = '';
+                
+                this.totalMessages++;
+                this.messagesInCurrentLevel++;
+                
+                this.checkStreakLevelUp();
+                this.updateUI();
+                
+                setTimeout(() => this.generateAutoReply(msg), 1000);
+            }
+
+            addMessage(text, type, sender) {
+                const userData = this.members.get(sender) || this.currentUser;
+                const message = {
+                    text,
+                    type,
+                    sender: sender,
+                    glowEffect: userData.glowEffect,
+                    time: new Date().toLocaleTimeString(),
+                    timestamp: Date.now()
+                };
+
+                this.messages.push(message);
+                this.displayMessage(message);
+                this.saveData();
+            }
+
+            displayMessage(message) {
+                const chatBox = document.getElementById('chatBox');
+                const messageDiv = document.createElement('div');
+                
+                messageDiv.className = `message ${message.type} ${message.glowEffect}`;
+                messageDiv.innerHTML = `
+                    ${message.type === 'received' ? `<div class="message-sender">${message.sender}</div>` : ''}
+                    ${message.text}
+                    <div class="message-time">${message.time}</div>
+                `;
+                
+                chatBox.appendChild(messageDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            checkStreakLevelUp() {
+                if (this.messagesInCurrentLevel >= 150) {
+                    this.currentStreakLevel++;
+                    this.messagesInCurrentLevel = 0;
+                    this.showSuccess(`🎉 Level ${this.currentStreakLevel} Unlocked!`);
+                }
+            }
+
+            generateAutoReply(userMessage) {
+                const onlineMembers = Array.from(this.members.values()).filter(m => m.online);
+                if (onlineMembers.length > 1) {
+                    const randomMember = onlineMembers[Math.floor(Math.random() * onlineMembers.length)];
+                    if (randomMember.name !== this.currentUser.name) {
+                        const replies = [
+                            "That's interesting!",
+                            "Wow, that's awesome! 🚀",
+                            "I see what you mean!",
+                            "Thanks for sharing!",
+                            "Keep the messages coming! 🔥"
+                        ];
+                        
+                        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                        this.addMessage(randomReply, 'received', randomMember.name);
+                    }
+                }
+            }
+
+            updateUI() {
+                document.getElementById('streak-level').textContent = this.currentStreakLevel;
+                document.getElementById('message-count').textContent = this.messagesInCurrentLevel;
+                
+                if (this.currentUser) {
+                    document.getElementById('chat-user').innerHTML = `${this.currentUser.name} <span class="online-dot"></span>`;
+                    document.getElementById('currentUserName').textContent = this.currentUser.name;
+                    document.getElementById('currentUserGlow').textContent = this.getGlowDisplayName(this.currentUser.glowEffect);
+                }
+            }
+
+            setupProfile(name, glowEffect) {
+                if (!name.trim()) {
+                    alert("Please enter your name!");
+                    return false;
+                }
+
+                this.currentUser = {
+                    name: name.trim(),
+                    glowEffect: glowEffect,
+                    joinDate: new Date().toISOString(),
+                    online: true
+                };
+
+                this.members.set(this.currentUser.name, this.currentUser);
+                this.displayWelcomeMessage();
+                this.updateUI();
+                this.updateMembersList();
+                this.saveData();
+                
+                return true;
+            }
+
+            updateProfile(name, glowEffect) {
+                if (!name.trim()) {
+                    this.showError("Please enter your name!");
+                    return false;
+                }
+
+                if (this.currentUser) {
+                    this.members.delete(this.currentUser.name);
+                }
+
+                this.currentUser = {
+                    name: name.trim(),
+                    glowEffect: glowEffect,
+                    joinDate: new Date().toISOString(),
+                    online: true
+                };
+
+                this.members.set(this.currentUser.name, this.currentUser);
+                
+                this.messages.forEach(msg => {
+                    if (msg.sender === this.currentUser.name) {
+                        msg.glowEffect = glowEffect;
+                    }
+                });
+
+                this.refreshChatDisplay();
+                this.updateUI();
+                this.updateMembersList();
+                this.saveData();
+                this.hideProfileSetup();
+                
+                this.showSuccess("Profile updated successfully! ✨");
+                return true;
+            }
+
+            refreshChatDisplay() {
+                const chatBox = document.getElementById('chatBox');
+                chatBox.innerHTML = '';
+                this.messages.forEach(msg => this.displayMessage(msg));
+            }
+
+            getGlowDisplayName(glowEffect) {
+                const names = {
+                    'glow-fire': 'Fire Glow',
+                    'glow-ice': 'Ice Glow', 
+                    'glow-neon': 'Neon Glow',
+                    'glow-toxic': 'Toxic Glow',
+                    'glow-gold': 'Gold Glow',
+                    'glow-rainbow': 'Rainbow Glow'
+                };
+                return names[glowEffect] || 'Fire Glow';
+            }
+
+            updateMembersList() {
+                const membersList = document.getElementById('membersList');
+                const membersCount = document.getElementById('membersCount');
+                
+                membersList.innerHTML = '';
+                
+                // Add current user first
+                if (this.currentUser) {
+                    const userItem = document.createElement('div');
+                    userItem.className = 'member-item';
+                    userItem.innerHTML = `
+                        <div class="member-info">
+                            <span class="member-glow" style="background: ${this.getGlowColor(this.currentUser.glowEffect)}"></span>
+                            ${this.currentUser.name} (You)
+                        </div>
+                        <span class="online-status">● Online</span>
+                    `;
+                    membersList.appendChild(userItem);
+                }
+                
+                // Add other members
+                let onlineCount = 1; // Start with current user
+                
+                this.members.forEach((member, name) => {
+                    if (name !== this.currentUser?.name) {
+                        const memberItem = document.createElement('div');
+                        memberItem.className = 'member-item';
+                        const status = member.online ? '● Online' : '○ Offline';
+                        const statusColor = member.online ? '#00ff00' : '#ff4444';
+                        
+                        if (member.online) onlineCount++;
+                        
+                        memberItem.innerHTML = `
+                            <div class="member-info">
+                                <span class="member-glow" style="background: ${this.getGlowColor(member.glowEffect)}"></span>
+                                ${member.name}
+                            </div>
+                            <span class="online-status" style="color: ${statusColor}">${status}</span>
+                        `;
+                        membersList.appendChild(memberItem);
+                    }
+                });
+                
+                membersCount.textContent = onlineCount;
+            }
+
+            getGlowColor(glowEffect) {
+                const colors = {
+                    'glow-fire': '#ff4400',
+                    'glow-ice': '#00ffff',
+                    'glow-neon': '#ff00ff',
+                    'glow-toxic': '#00ff00',
+                    'glow-gold': '#ffd700',
+                    'glow-rainbow': '#ff0000'
+                };
+                return colors[glowEffect] || '#00c6ff';
+            }
+
+            displayWelcomeMessage() {
+                if (this.messages.length === 0) {
+                    this.addMessage(`Welcome to LinkVerse ${this.currentUser.name}! Share the app link with friends! ✨`, 'received', 'System');
+                }
+            }
+
+            showSuccess(message) {
+                const successMsg = document.getElementById('successMessage');
+                successMsg.textContent = message;
+                successMsg.style.display = 'block';
+                setTimeout(() => successMsg.style.display = 'none', 3000);
+            }
+
+            showError(message) {
+                alert('❌ ' + message);
+            }
+
+            saveData() {
+                const appData = {
+                    messages: this.messages,
+                    totalMessages: this.totalMessages,
+                    currentStreakLevel: this.currentStreakLevel,
+                    messagesInCurrentLevel: this.messagesInCurrentLevel,
+                    currentUser: this.currentUser,
+                    members: Array.from(this.members.entries()),
+                    roomId: this.roomId
+                };
+                localStorage.setItem('linkverse_data', JSON.stringify(appData));
+            }
+
+            loadData() {
+                const storedData = localStorage.getItem('linkverse_data');
+                if (storedData) {
+                    const data = JSON.parse(storedData);
+                    this.messages = data.messages || [];
+                    this.totalMessages = data.totalMessages || 0;
+                    this.currentStreakLevel = data.currentStreakLevel || 1;
+                    this.messagesInCurrentLevel = data.messagesInCurrentLevel || 0;
+                    this.currentUser = data.currentUser;
+                    this.roomId = data.roomId || this.roomId;
+                    
+                    if (data.members) {
+                        this.members = new Map(data.members);
+                    }
+
+                    this.messages.forEach(msg => this.displayMessage(msg));
+                    this.updateMembersList();
+                }
+            }
+        }
+
+        const chatApp = new LinkVerseChat();
+
+        function startChat() {
+            const name = document.getElementById('userNameInput').value.trim();
+            const glowEffect = document.getElementById('glowEffectSelect').value;
+            
+            if (chatApp.setupProfile(name, glowEffect)) {
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('chatContainer').style.display = 'flex';
+                chatApp.init();
+            }
+        }
+
+        function sendMessage() {
+            chatApp.sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') chatApp.sendMessage();
+        }
+
+        function searchMessages(query) {
+            // Simple search implementation
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            
+            const filteredMessages = query ? 
+                chatApp.messages.filter(msg => msg.text.toLowerCase().includes(query.toLowerCase())) : 
+                chatApp.messages;
+            
+            filteredMessages.forEach(msg => chatApp.displayMessage(msg));
+        }
+
+        function showSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function hideSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function showProfileSetup() {
+            if (chatApp.currentUser) {
+                document.getElementById('editUserNameInput').value = chatApp.currentUser.name;
+                document.getElementById('editGlowEffectSelect').value = chatApp.currentUser.glowEffect;
+            }
+            document.getElementById('profileModal').style.display = 'flex';
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function hideProfileSetup() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function updateProfile() {
+            const name = document.getElementById('editUserNameInput').value;
+            const glowEffect = document.getElementById('editGlowEffectSelect').value;
+            chatApp.updateProfile(name, glowEffect);
+        }
+
+        function showMembers() {
+            chatApp.updateMembersList();
+            document.getElementById('membersModal').style.display = 'flex';
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function hideMembers() {
+            document.getElementById('membersModal').style.display = 'none';
+        }
+
+        function copyAppLink() {
+            const link = window.location.href;
+            navigator.clipboard.writeText(link).then(() => {
+                chatApp.showSuccess('App link copied! Share with friends 📤');
+            });
+        }
+
+        // Auto-load
+        window.addEventListener('load', function() {
+            chatApp.loadData();
+            if (chatApp.currentUser) {
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('chatContainer').style.display = 'flex';
+                chatApp.init();
+            }
+        });
+    </script>
+</body>
+</html>
